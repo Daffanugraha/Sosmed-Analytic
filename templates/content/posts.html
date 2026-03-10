@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Semua Post{% endblock %}
+{% block page_title %}Semua Post{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2 me-2">
+  {% for s, label in [('all','Semua'),('scheduled','Terjadwal'),('published','Published'),('draft','Draft'),('failed','Gagal')] %}
+  <a href="{{ url_for('content.posts', status=s) }}"
+     class="btn btn-sm {% if status_filter == s %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+{% if posts %}
+<div class="posts-grid">
+  {% for post in posts %}
+  <div class="post-card">
+    <!-- Thumbnail -->
+    <div class="post-thumb">
+      {% set thumb = post.get_thumbnail() %}
+      {% if thumb %}
+        {% if post.media_type == 'video' %}
+          <div class="thumb-video-overlay">
+            <i class="bi bi-play-circle-fill"></i>
+          </div>
+          <img src="{{ thumb }}" alt="thumbnail" onerror="this.style.display='none'">
+        {% else %}
+          <img src="{{ thumb }}" alt="thumbnail">
+        {% endif %}
+      {% else %}
+        <div class="thumb-placeholder">
+          <i class="bi bi-image"></i>
+        </div>
+      {% endif %}
+      <span class="post-status-badge {{ post.status }}">
+        {% if post.status == 'published' %}✅
+        {% elif post.status == 'scheduled' %}⏰
+        {% elif post.status == 'publishing' %}⚙️
+        {% elif post.status == 'failed' %}❌
+        {% else %}📝{% endif %}
+        {{ post.status.title() }}
+      </span>
+    </div>
+
+    <!-- Info -->
+    <div class="post-info">
+      <h6 class="post-title">{{ post.title or 'Tanpa judul' }}</h6>
+      <p class="post-caption">{{ (post.caption or '')[:80] }}{% if (post.caption or '')|length > 80 %}…{% endif %}</p>
+
+      <div class="post-meta">
+        <div class="platform-badges">
+          {% for pp in post.platform_posts.all() %}
+          <span class="platform-badge {{ pp.platform }}" title="{{ pp.platform.title() }}: {{ pp.status }}">
+            <i class="bi bi-{{ pp.platform | platform_icon }}"></i>
+          </span>
+          {% endfor %}
+        </div>
+        <div class="post-date text-muted small">
+          {% if post.scheduled_at %}
+            <i class="bi bi-calendar me-1"></i>
+            {{ post.scheduled_at | datetime_fmt }}
+          {% else %}
+            {{ post.created_at | datetime_fmt }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="post-actions">
+      <a href="{{ url_for('analytics.index') }}?post_id={{ post.id }}"
+         class="btn btn-sm btn-outline-primary" title="Lihat Analitik">
+        <i class="bi bi-bar-chart"></i>
+      </a>
+      <form method="POST" action="{{ url_for('content.delete_post', post_id=post.id) }}"
+            onsubmit="return confirm('Hapus post ini?')" class="d-inline">
+        <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state-page">
+  <i class="bi bi-collection"></i>
+  <h4>Belum ada post</h4>
+  <p>Mulai buat konten dan publish ke semua platform favoritmu!</p>
+  <a href="{{ url_for('content.upload') }}" class="btn btn-primary btn-lg">
+    <i class="bi bi-plus-lg me-2"></i>Buat Post Pertama
+  </a>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

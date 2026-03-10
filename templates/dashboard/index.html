@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- ── Stat cards ──────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+      <div class="stat-card stat-total">
+        <div class="stat-icon"><i class="bi bi-collection"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ total_posts }}</div>
+          <div class="stat-label">Total Post</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="stat-card stat-scheduled">
+        <div class="stat-icon"><i class="bi bi-calendar-event"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ scheduled_posts }}</div>
+          <div class="stat-label">Terjadwal</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="stat-card stat-published">
+        <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ published_posts }}</div>
+          <div class="stat-label">Dipublish</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="stat-card stat-platforms">
+        <div class="stat-icon"><i class="bi bi-link-45deg"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ connected_accs }}</div>
+          <div class="stat-label">Platform Aktif</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- ── Recent posts ────────────────────────────── -->
+    <div class="col-lg-8">
+      <div class="card card-custom h-100">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Post Terbaru</h5>
+          <a href="{{ url_for('content.posts') }}" class="btn btn-sm btn-outline-primary">
+            Lihat Semua
+          </a>
+        </div>
+        <div class="card-body p-0">
+          {% if recent_posts %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th>Konten</th>
+                  <th>Platform</th>
+                  <th>Status</th>
+                  <th>Jadwal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for post in recent_posts %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      {% set thumb = post.get_thumbnail() %}
+                      {% if thumb %}
+                        {% if post.media_type == 'video' %}
+                          <div class="media-thumb video-thumb">
+                            <i class="bi bi-play-circle-fill"></i>
+                          </div>
+                        {% else %}
+                          <img src="{{ thumb }}" class="media-thumb" alt="thumb">
+                        {% endif %}
+                      {% endif %}
+                      <div>
+                        <div class="fw-medium">{{ post.title or 'Tanpa judul' }}</div>
+                        <div class="text-muted small">{{ (post.caption or '')[:50] }}{% if (post.caption or '')|length > 50 %}…{% endif %}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="platform-badges">
+                      {% for pp in post.platform_posts.all() %}
+                        <span class="platform-badge {{ pp.platform }}">
+                          <i class="bi bi-{{ pp.platform | platform_icon }}"></i>
+                        </span>
+                      {% endfor %}
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge-status {{ post.status }}">
+                      {% if post.status == 'published' %}✅ Published
+                      {% elif post.status == 'scheduled' %}⏰ Scheduled
+                      {% elif post.status == 'publishing' %}⚙️ Publishing…
+                      {% elif post.status == 'failed' %}❌ Failed
+                      {% else %}📝 Draft{% endif %}
+                    </span>
+                  </td>
+                  <td class="text-muted small">
+                    {{ post.scheduled_at | datetime_fmt if post.scheduled_at else post.created_at | datetime_fmt }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="empty-state py-5">
+            <i class="bi bi-collection"></i>
+            <p>Belum ada post. <a href="{{ url_for('content.upload') }}">Buat post pertama!</a></p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right column ────────────────────────────── -->
+    <div class="col-lg-4">
+
+      <!-- Upcoming schedule -->
+      <div class="card card-custom mb-3">
+        <div class="card-header-custom">
+          <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Jadwal Mendatang</h5>
+        </div>
+        <div class="card-body">
+          {% if upcoming %}
+            {% for post in upcoming %}
+            <div class="schedule-item">
+              <div class="schedule-time">
+                <div class="schedule-date">{{ post.scheduled_at.strftime('%d %b') }}</div>
+                <div class="schedule-hour">{{ post.scheduled_at.strftime('%H:%M') }}</div>
+              </div>
+              <div class="schedule-info">
+                <div class="fw-medium">{{ post.title or 'Tanpa judul' }}</div>
+                <div class="platform-badges mt-1">
+                  {% for pp in post.platform_posts.all() %}
+                    <span class="platform-badge {{ pp.platform }}">
+                      <i class="bi bi-{{ pp.platform | platform_icon }}"></i>
+                    </span>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state py-3">
+              <i class="bi bi-calendar-x"></i>
+              <p class="small">Tidak ada jadwal</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Connected platforms -->
+      <div class="card card-custom">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-link me-2"></i>Platform Aktif</h5>
+          <a href="{{ url_for('platforms.index') }}" class="btn btn-sm btn-outline-primary">
+            Kelola
+          </a>
+        </div>
+        <div class="card-body">
+          {% if platforms %}
+            {% for acc in platforms %}
+            <div class="platform-account-row">
+              <div class="platform-icon-wrap {{ acc.platform }}">
+                <i class="bi bi-{{ acc.platform | platform_icon }}"></i>
+              </div>
+              <div class="flex-grow-1">
+                <div class="fw-medium">{{ acc.account_name or acc.platform.title() }}</div>
+                <div class="text-muted small">{{ acc.platform.title() }}</div>
+              </div>
+              <span class="badge bg-success-subtle text-success">Aktif</span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state py-3">
+              <i class="bi bi-plug"></i>
+              <p class="small">Belum ada platform terhubung.</p>
+              <a href="{{ url_for('platforms.index') }}" class="btn btn-sm btn-primary">
+                Hubungkan Sekarang
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Kelola Platform{% endblock %}
+{% block page_title %}Kelola Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="row g-4 mb-4">
+    {% for platform, info in meta.items() %}
+    {% set connected_accs = accounts | selectattr('platform', 'equalto', platform) | list %}
+    <div class="col-md-6 col-xl-3">
+      <div class="platform-card {{ platform }}">
+        <div class="pc-header">
+          <div class="pc-icon">
+            <i class="bi bi-{{ platform | platform_icon }}"></i>
+          </div>
+          <div>
+            <h5 class="mb-0">{{ info.name }}</h5>
+            <small class="text-muted">{{ connected_accs | length }} akun terhubung</small>
+          </div>
+        </div>
+
+        {% if connected_accs %}
+        <div class="pc-accounts">
+          {% for acc in connected_accs %}
+          <div class="pc-account-row">
+            <div class="pc-avatar">
+              {% if acc.avatar_url %}
+                <img src="{{ acc.avatar_url }}" alt="{{ acc.account_name }}">
+              {% else %}
+                {{ (acc.account_name or platform)[0].upper() }}
+              {% endif %}
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-medium">{{ acc.account_name or 'Akun' }}</div>
+              <div class="text-muted small">
+                Terhubung {{ acc.connected_at | datetime_fmt }}
+              </div>
+            </div>
+            <form method="POST"
+                  action="{{ url_for('platforms.disconnect', account_id=acc.id) }}"
+                  onsubmit="return confirm('Putuskan akun ini?')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="pc-footer">
+          <a href="{{ url_for('platforms.connect', platform=platform) }}"
+             class="btn btn-connect {{ platform }} w-100">
+            <i class="bi bi-plus-circle me-2"></i>
+            {% if connected_accs %}Tambah Akun Lain{% else %}Hubungkan{% endif %}
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}
